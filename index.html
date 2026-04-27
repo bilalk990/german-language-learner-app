@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart Vocab Trainer</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div id="app">
+        <!-- Dashboard View -->
+        <div id="dashboard-view" class="view active">
+            <header class="app-header">
+                <h1>Smart Vocab</h1>
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <span class="stat-value text-primary" id="stat-due">0</span>
+                        <span class="stat-label">Due Today</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value text-danger" id="stat-weak">0</span>
+                        <span class="stat-label">Weak</span>
+                    </div>
+                </div>
+                <div class="stats-row mt-3">
+                    <div class="stat-card">
+                        <span class="stat-value text-success" id="stat-streak">0</span>
+                        <span class="stat-label">Day Streak 🔥</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value" id="stat-accuracy">0%</span>
+                        <span class="stat-label">Accuracy 🎯</span>
+                    </div>
+                </div>
+            </header>
+            <main class="dashboard-main">
+                <button class="btn-primary btn-large" id="btn-start-session">Start Daily Session</button>
+                <button class="btn-secondary btn-large mt-3" id="btn-study-weak">Study Weak Words Only</button>
+
+                <div class="action-grid mt-6">
+                    <button class="btn-outline" id="btn-nav-add">
+                        <span class="icon">+</span> Add Word
+                    </button>
+                    <button class="btn-outline" id="btn-nav-bulk">
+                        <span class="icon">📋</span> Bulk Add
+                    </button>
+                    <button class="btn-outline" id="btn-nav-manage" style="grid-column: span 2;">
+                        <span class="icon">≡</span> Manage Vocabulary
+                    </button>
+                </div>
+
+                <div id="nemesis-container" class="mt-8 hidden">
+                    <p class="text-sm text-danger mb-3">Your Nemesis Words (Hardest) 🔥</p>
+                    <div id="nemesis-list" class="nemesis-grid">
+                        <!-- Nemesis items here -->
+                    </div>
+                </div>
+
+                <div class="backup-section mt-6">
+                    <p class="text-sm text-secondary mb-3">Backup & Data Recovery</p>
+                    <div class="action-grid">
+                        <button class="btn-secondary text-sm" style="padding: 12px 6px;"
+                            onclick="window.exportData()">💾 Export JSON</button>
+                        <button class="btn-secondary text-sm" style="padding: 12px 6px;"
+                            onclick="window.triggerImport()">📂 Import JSON</button>
+                    </div>
+                    <input type="file" id="import-input" class="hidden" accept=".json">
+                </div>
+            </main>
+        </div>
+
+        <!-- Add Word View -->
+        <div id="add-word-view" class="view">
+            <header class="nav-header">
+                <button class="btn-icon" onclick="appNavigate('dashboard-view')">←</button>
+                <h2>Add Word</h2>
+                <div style="width: 24px"></div> <!-- Spacer -->
+            </header>
+            <main>
+                <form id="add-word-form" class="standard-form">
+                    <div class="input-group">
+                        <label>German Word</label>
+                        <input type="text" id="add-german" required autocomplete="off" placeholder="e.g. Hund">
+                    </div>
+                    <div class="input-group">
+                        <label>Meaning (English/Urdu)</label>
+                        <input type="text" id="add-meaning" required autocomplete="off" placeholder="e.g. Dog">
+                    </div>
+                    <div class="input-group">
+                        <label>Example Sentence (Optional)</label>
+                        <input type="text" id="add-example" autocomplete="off" placeholder="Der Hund bellt.">
+                    </div>
+                    <button type="submit" class="btn-primary btn-full mt-4">Save Word</button>
+                    <p id="add-success-msg" class="text-success text-center mt-3 hidden">Word added successfully!</p>
+                </form>
+            </main>
+        </div>
+
+        <!-- Bulk Add View -->
+        <div id="bulk-add-view" class="view flex-column">
+            <header class="nav-header shrink-0">
+                <button class="btn-icon" onclick="appNavigate('dashboard-view')">←</button>
+                <h2>Bulk Import</h2>
+                <div style="width: 24px"></div>
+            </header>
+            <main class="flex-column" style="flex: 1;">
+                <p class="text-xs text-muted mb-3">Paste your list below. Format: "German | Meaning" per line.</p>
+                <textarea id="bulk-input" class="search-input"
+                    style="flex: 1; resize: none; font-family: monospace; height: 300px; padding: 16px;"
+                    placeholder="Hund | Dog&#10;Katze | Cat&#10;Haus | House"></textarea>
+                <button class="btn-primary btn-full mt-4" onclick="handleBulkAdd()">Import All Words</button>
+                <p id="bulk-success-msg" class="text-success text-center mt-3 hidden">Words imported successfully!</p>
+            </main>
+        </div>
+
+        <!-- Manage Words View -->
+        <div id="manage-words-view" class="view flex-column">
+            <header class="nav-header shrink-0">
+                <button class="btn-icon" onclick="appNavigate('dashboard-view')">←</button>
+                <h2>Vocabulary (<span id="manage-total-count">0</span>)</h2>
+                <div style="width: 24px"></div>
+            </header>
+
+            <div class="px-2 mb-4 shrink-0">
+                <input type="text" id="manage-search" class="search-input" placeholder="Search German or Meaning..."
+                    oninput="updateManageList()">
+            </div>
+
+            <main class="list-main scroll-y">
+                <div id="word-list" class="word-list">
+                    <!-- Word items injected here -->
+                </div>
+            </main>
+        </div>
+
+        <!-- Session View -->
+        <div id="session-view" class="view flex-column bg-darker">
+            <header class="session-header shrink-0">
+                <button class="btn-icon text-muted" id="btn-end-session">✕</button>
+                <div class="progress-bar-container">
+                    <div class="progress-fill" id="session-progress"></div>
+                </div>
+                <span id="session-count" class="text-sm">0/0</span>
+            </header>
+
+            <main class="flashcard-container">
+                <!-- Hint Overlay -->
+                <div class="swipe-hint right-hint hidden" id="hint-right">✅ Correct</div>
+                <div class="swipe-hint left-hint hidden" id="hint-left">❌ Wrong</div>
+
+                <div class="flashcard" id="flashcard">
+                    <div class="flashcard-inner" id="flashcard-inner">
+                        <!-- Front View -->
+                        <div class="flashcard-front">
+                            <div class="card-content">
+                                <div class="word-row">
+                                    <h1 id="card-german" class="word-large">Word</h1>
+                                    <button class="btn-voice" id="btn-voice-card"
+                                        onclick="window.speakWord(); event.stopPropagation();">🔊</button>
+                                </div>
+                            </div>
+                            <p class="tap-hint">Tap anywhere to flip</p>
+                        </div>
+                        <!-- Back View -->
+                        <div class="flashcard-back">
+                            <div class="card-content">
+                                <h2 id="card-meaning-display" class="word-medium">Meaning</h2>
+                                <p id="card-example-display" class="card-example"></p>
+                            </div>
+
+                            <div class="card-actions">
+                                <button class="btn-action btn-wrong" id="btn-mark-wrong">
+                                    <span class="emoji">❌</span>
+                                    <span>Wrong</span>
+                                </button>
+                                <button class="btn-action btn-correct" id="btn-mark-correct">
+                                    <span class="emoji">✅</span>
+                                    <span>Correct</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Session Summary View -->
+        <div id="summary-view" class="view">
+            <header class="app-header align-center mt-8">
+                <h1>Session Complete!</h1>
+                <p class="text-muted mt-2">Great job maintaining your memory.</p>
+            </header>
+            <main class="dashboard-main mt-6">
+                <div class="summary-card">
+                    <div class="summary-stat">
+                        <span class="stat-label">Reviewed</span>
+                        <span class="stat-value" id="summary-total">0</span>
+                    </div>
+                    <div class="summary-stat">
+                        <span class="stat-label">Correct</span>
+                        <span class="stat-value text-success" id="summary-correct">0</span>
+                    </div>
+                    <div class="summary-stat">
+                        <span class="stat-label">Wrong (Weak)</span>
+                        <span class="stat-value text-danger" id="summary-wrong">0</span>
+                    </div>
+                </div>
+                <button class="btn-primary btn-full mt-6" onclick="appNavigate('dashboard-view')">Back to
+                    Dashboard</button>
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/logic.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>
