@@ -34,6 +34,9 @@ jobs:
       - name: Install Expo CLI
         run: npm install -g expo-cli
 
+      - name: Install native dependencies
+        run: npx expo install --fix
+
       - name: Prebuild Android
         run: npx expo prebuild --platform android --clean
 
@@ -44,7 +47,7 @@ jobs:
         run: |
           cd android
           chmod +x ./gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
