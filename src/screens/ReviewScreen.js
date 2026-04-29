@@ -16,19 +16,39 @@ export default function ReviewScreen({ route, navigation }) {
   const [reviewedCount, setReviewedCount] = useState(0);
   const [stats, setStats] = useState({ correct: 0, wrong: 0 });
   const [sessionFinished, setSessionFinished] = useState(false);
-  const [isFlipped, setIsFlipped] = useState(false); // Track if card is flipped
+  const [isFlipped, setIsFlipped] = useState(false);
 
   useEffect(() => {
     // Use the optimized queue builder
     const sessionQueue = buildSessionQueue(words, mode, wordsAddedToday);
     
+    if (sessionQueue.length === 0) {
+      setSessionFinished(true);
+    }
+    
     setQueue(sessionQueue);
     setInitialCount(sessionQueue.length);
   }, []);
 
+  // Safety check - if queue is empty, show finished screen
+  if (queue.length === 0 && !sessionFinished) {
+    setSessionFinished(true);
+  }
+
   const currentWord = queue[0];
+  
+  // Prevent crash if currentWord is undefined
+  if (!currentWord && !sessionFinished) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyTitle}>Loading...</Text>
+      </View>
+    );
+  }
 
   const handleResponse = (isCorrect) => {
+    if (!currentWord) return; // Safety check
+    
     updateReview(currentWord.id, isCorrect);
     
     setStats(prev => ({
@@ -40,8 +60,6 @@ export default function ReviewScreen({ route, navigation }) {
       const remainingQueue = prevQueue.slice(1);
       
       if (!isCorrect) {
-        // Re-queue the wrong word after 5-10 cards (randomized)
-        // But only if there are other words in queue (avoid infinite loop)
         if (remainingQueue.length > 0) {
           const reQueuePosition = Math.min(
             5 + Math.floor(Math.random() * 6), 
@@ -51,7 +69,6 @@ export default function ReviewScreen({ route, navigation }) {
           newQueue.splice(reQueuePosition, 0, currentWord);
           return newQueue;
         } else {
-          // Only 1 word in queue and it's wrong - end session
           setReviewedCount(prev => prev + 1);
           setSessionFinished(true);
           setIsFlipped(false);
@@ -59,9 +76,8 @@ export default function ReviewScreen({ route, navigation }) {
         }
       }
       
-      // Only increment reviewed count for correct answers (word leaves session)
       setReviewedCount(prev => prev + 1);
-      setIsFlipped(false); // Reset flip for next card
+      setIsFlipped(false);
       
       if (remainingQueue.length === 0) {
         setSessionFinished(true);

@@ -22,24 +22,35 @@ const WordItem = ({ item, onReset, onMarkWeak, onDelete, onPromote, onMarkEasy, 
     }
   };
 
+  // Safe date formatting
+  const getReviewDate = () => {
+    if (!item.nextReview) return 'Today';
+    try {
+      const date = new Date(item.nextReview);
+      return isNaN(date.getTime()) ? 'Today' : date.toLocaleDateString();
+    } catch (e) {
+      return 'Today';
+    }
+  };
+
   return (
     <View style={styles.wordCard}>
       <View style={styles.wordHeader}>
         <View style={styles.wordMain}>
-          <Text style={styles.wordText}>{item.word}</Text>
-          <Text style={styles.itemMeaning}>{item.meaning}</Text>
+          <Text style={styles.wordText}>{item.word || 'Unknown'}</Text>
+          <Text style={styles.itemMeaning}>{item.meaning || 'No meaning'}</Text>
         </View>
         <View style={[styles.badge, { backgroundColor: getStageColor(item.stage) + '20' }]}>
-          <Text style={[styles.badgeText, { color: getStageColor(item.stage) }]}>{item.stage}</Text>
+          <Text style={[styles.badgeText, { color: getStageColor(item.stage) }]}>{item.stage || 'New'}</Text>
         </View>
       </View>
 
       <View style={styles.wordFooter}>
         <View style={styles.statsRow}>
-          <Text style={styles.statText}>Errors: {item.errorCount}</Text>
+          <Text style={styles.statText}>Errors: {item.errorCount || 0}</Text>
           <Text style={styles.dot}>•</Text>
           <Text style={styles.statText}>
-            Review: {item.nextReview ? new Date(item.nextReview).toLocaleDateString() : 'Today'}
+            Review: {getReviewDate()}
           </Text>
         </View>
         
