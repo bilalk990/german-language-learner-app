@@ -31,28 +31,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Expo CLI
-        run: npm install -g expo-cli
-
-      - name: Install native dependencies
-        run: npx expo install --fix
-
       - name: Prebuild Android
         run: npx expo prebuild --platform android --clean
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-
-      - name: Setup signing config
-        run: |
-          echo "Creating release signing config..."
-          mkdir -p android/keystores
-          # Generate a temporary keystore for release (for testing only)
-          keytool -genkey -v -keystore android/keystores/release.keystore -storepass android -alias release -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug, O=Android, C=US"
-          echo "android.storeFile=../keystores/release.keystore" >> android/gradle.properties
-          echo "android.storePassword=android" >> android/gradle.properties
-          echo "android.keyAlias=release" >> android/gradle.properties
-          echo "android.keyPassword=android" >> android/gradle.properties
 
       - name: Build Release APK
         run: |
