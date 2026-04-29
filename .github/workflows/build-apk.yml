@@ -43,15 +43,26 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Build APK
+      - name: Setup signing config
+        run: |
+          echo "Creating release signing config..."
+          mkdir -p android/keystores
+          # Generate a temporary keystore for release (for testing only)
+          keytool -genkey -v -keystore android/keystores/release.keystore -storepass android -alias release -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug, O=Android, C=US"
+          echo "android.storeFile=../keystores/release.keystore" >> android/gradle.properties
+          echo "android.storePassword=android" >> android/gradle.properties
+          echo "android.keyAlias=release" >> android/gradle.properties
+          echo "android.keyPassword=android" >> android/gradle.properties
+
+      - name: Build Release APK
         run: |
           cd android
           chmod +x ./gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleRelease --no-daemon
 
-      - name: Upload APK
+      - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: german-language-app-debug
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 30
+          name: german-language-app-release
+          path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 90
